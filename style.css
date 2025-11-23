@@ -1,78 +1,107 @@
+/* --- CSS STYLING (Material 3 Aesthetic) --- */
 :root {
-    /* Material 3 Color Palette (Teal & Surface Tones) */
-    --md-sys-color-primary: #006a6a;
-    --md-sys-color-on-primary: #ffffff;
-    --md-sys-color-surface: #f4fbfb;
-    --md-sys-color-surface-container: #ffffff;
-    --md-sys-color-on-surface: #161d1d;
-    --md-sys-color-outline: #6f7979;
-    
-    --card-radius: 16px;
-    --shadow-elevation: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    --md-primary: #006a6a;
+    --md-on-primary: #ffffff;
+    --md-surface: #f4fbfb;
+    --md-surface-container: #ffffff;
+    --md-on-surface: #191c1c;
+    --md-outline: #6f7979;
+    --card-radius: 12px;
+    --shadow: 0px 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 body {
     font-family: 'Roboto', sans-serif;
-    background-color: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
+    background-color: var(--md-surface);
+    color: var(--md-on-surface);
     margin: 0;
     padding: 0;
 }
 
-/* Header */
-.top-app-bar {
-    background-color: var(--md-sys-color-surface-container);
+/* App Bar */
+header {
+    background-color: var(--md-surface-container);
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-h1 { margin: 0; font-size: 1.5rem; font-weight: 500; }
+h1 { margin: 0; font-size: 1.5rem; color: var(--md-primary); }
 
-/* Grid Layout */
-.dashboard-grid {
+.controls label { font-weight: 500; margin-right: 10px; }
+select {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--md-outline);
+    font-family: inherit;
+}
+
+/* Dashboard Grid */
+.grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
-    padding: 2rem;
+    gap: 20px;
+    padding: 20px;
     max-width: 1400px;
     margin: 0 auto;
 }
 
 /* Cards */
 .card {
-    background-color: var(--md-sys-color-surface-container);
+    background: var(--md-surface-container);
     border-radius: var(--card-radius);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-elevation);
-    transition: transform 0.2s;
+    padding: 20px;
+    box-shadow: var(--shadow);
 }
 
-.card:hover { transform: translateY(-2px); }
+.metric-card { text-align: center; }
+.metric-card h3 { font-size: 1rem; color: var(--md-outline); margin: 0; }
+.metric-card .number { font-size: 2.2rem; font-weight: 700; color: var(--md-primary); margin: 10px 0 0 0; }
 
-h3 { margin-top: 0; font-size: 1.1rem; color: var(--md-sys-color-outline); }
+/* Insight Card */
+.insight-card { text-align: left; }
+.insight-item { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+.insight-item:last-child { border-bottom: none; }
+.insight-label { font-size: 0.9rem; color: var(--md-outline); font-weight: 500; }
+.insight-value { font-size: 1.3rem; font-weight: 700; color: var(--md-primary); }
 
-/* Specific Card Sizes */
-.metric-card p { font-size: 2.5rem; font-weight: 700; color: var(--md-sys-color-primary); margin: 0.5rem 0 0 0; }
+/* Chart Areas */
+.chart-box { min-height: 350px; }
 .full-width { grid-column: 1 / -1; }
 .large { grid-column: span 2; }
 
-@media (max-width: 900px) {
+@media(max-width: 900px) {
     .large { grid-column: span 1; }
 }
 
-/* Tooltip */
+h2 { font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem; color: #444; }
+
+/* Day 5 Objective: Tooltip Styling */
 .tooltip {
     position: absolute;
-    background: #333;
-    color: #fff;
+    text-align: center;
     padding: 8px;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
     border-radius: 4px;
-    font-size: 0.9rem;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
+    z-index: 10;
 }
-.tooltip.visible { opacity: 1; }
+
+/* Axis styling */
+.domain { stroke: #ccc; }
+.tick line { stroke: #eee; }
+.tick text { fill: #555; font-size: 11px; }

@@ -1,192 +1,280 @@
-// Global Dimensions
-const margin = { top: 20, right: 30, bottom: 40, left: 60 };
-const colors = ["#006a6a", "#4a6363", "#ffb4ab", "#ba1a1a"]; // Material palette
-
-// Selectors
-const containerBar = document.getElementById('barChart');
-const containerDonut = document.getElementById('donutChart');
-const containerLine = document.getElementById('lineChart');
+// Global Config
+const margin = { top: 30, right: 30, bottom: 50, left: 60 };
+const colors = { male: "#006a6a", female: "#ffb4ab" };
 const tooltip = d3.select("#tooltip");
 
-// --- Initialization ---
+// --- Init Function ---
 function init() {
-    // Populate dropdown with event listener
+    // Event Listener for Interaction (Day 5)
     d3.select("#yearSelect").on("change", function() {
         updateDashboard(this.value);
     });
 
-    // Draw Static Line Chart (Trends don't change with dropdown)
-    drawLineChart();
-
-    // Draw Initial Dynamic Charts
-    updateDashboard("2023");
+    // Initial Render
+    drawLineChart(); // Static trend chart
+    updateDashboard("2021-2022"); // Default view
 }
 
-// --- Update Function ---
 function updateDashboard(selectedYear) {
-    const yearData = educationData.filter(d => d.year == selectedYear);
+    const yearData = educationData.filter(d => d.year === selectedYear);
     
-    // Update Metrics
+    // Update KPIs
     const total = d3.sum(yearData, d => d.male + d.female);
-    const primary = yearData.find(d => d.level === "Primary");
-    const secondary = yearData.find(d => d.level === "Secondary");
+    const totalFem = d3.sum(yearData, d => d.female);
+    const totalMale = d3.sum(yearData, d => d.male);
 
-    d3.select("#totalEnrollment").text(total.toLocaleString());
-    d3.select("#primaryEnrollment").text((primary.male + primary.female).toLocaleString());
-    d3.select("#secondaryEnrollment").text((secondary.male + secondary.female).toLocaleString());
+    d3.select("#totalVal").text(total.toLocaleString());
+    d3.select("#femaleVal").text(totalFem.toLocaleString());
+    d3.select("#maleVal").text(totalMale.toLocaleString());
 
-    // Update Charts
+    // Female Ratio
+    const femaleRatio = ((totalFem / total) * 100).toFixed(1);
+    d3.select("#femaleRatio").text(`${femaleRatio}%`);
+
+    // Year-over-Year Change
+    const years = ["2019-2020", "2020-2021", "2021-2022"];
+    const currentIndex = years.indexOf(selectedYear);
+    if (currentIndex > 0) {
+        const prevYear = years[currentIndex - 1];
+        const prevYearData = educationData.filter(d => d.year === prevYear);
+        const prevTotal = d3.sum(prevYearData, d => d.male + d.female);
+        const yoyChange = ((total - prevTotal) / prevTotal * 100).toFixed(1);
+        const yoyElement = d3.select("#yoyChange");
+        yoyElement.text(`${yoyChange > 0 ? '+' : ''}${yoyChange}%`);
+        yoyElement.style("color", yoyChange >= 0 ? "#2e7d32" : "#c62828");
+    } else {
+        d3.select("#yoyChange").text("N/A").style("color", "#666");
+    }
+
+    // Largest Level
+    const levelTotals = yearData.map(d => ({
+        level: d.level,
+        total: d.male + d.female
+    }));
+    const largest = levelTotals.reduce((max, curr) => curr.total > max.total ? curr : max);
+    d3.select("#largestLevel").text(largest.level);
+
+    // Gender Gap (absolute difference)
+    const genderGap = Math.abs(totalFem - totalMale);
+    const genderGapElement = d3.select("#genderGap");
+    if (totalFem > totalMale) {
+        genderGapElement.text(`+${genderGap.toLocaleString()} F`).style("color", "#ffb4ab");
+    } else {
+        genderGapElement.text(`+${genderGap.toLocaleString()} M`).style("color", "#006a6a");
+    }
+
     drawBarChart(yearData);
     drawDonutChart(yearData);
 }
 
-// --- Chart 1: Grouped Bar Chart (Levels by Sex) ---
+// --- CHART 1: Grouped Bar Chart ---
 function drawBarChart(data) {
-    containerBar.innerHTML = ""; // Clear previous
-    const width = containerBar.clientWidth - margin.left - margin.right;
-    const height = 300 - margin.top - margin.bottom;
+    const container = document.getElementById('barChart');
+    container.innerHTML = ""; // Clear for redraw
+    const width = container.clientWidth - margin.left - margin.right;
+    const height = 350 - margin.top - margin.bottom;
 
-    const svg = d3.select(containerBar).append("svg")
+    const svg = d3.select(container).append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // X Axis (Levels)
-    const x0 = d3.scaleBand().domain(data.map(d => d.level)).range([0, width]).padding(0.2);
-    const x1 = d3.scaleBand().domain(["male", "female"]).range([0, x0.bandwidth()]).padding(0.05);
-    
-    // Y Axis (Count)
-    const y = d3.scaleLinear().domain([0, d3.max(data, d => Math.max(d.male, d.female))]).nice().range([height, 0]);
-    const color = d3.scaleOrdinal().domain(["male", "female"]).range(["#006a6a", "#ffb4ab"]);
+    // Day 3 Objective: Scales (Band & Linear)
+    const x0 = d3.scaleBand()
+        .domain(data.map(d => d.level))
+        .range([0, width])
+        .padding(0.2);
 
+    const x1 = d3.scaleBand()
+        .domain(["male", "female"])
+        .range([0, x0.bandwidth()])
+        .padding(0.05);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => Math.max(d.male, d.female)) * 1.1])
+        .range([height, 0]);
+
+    // Axes
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x0));
     svg.append("g").call(d3.axisLeft(y));
 
-    // Bars
-    const levels = svg.selectAll(".level").data(data).enter().append("g")
+    // Day 2 Objective: Binding Data
+    const levelGroups = svg.selectAll(".level-group")
+        .data(data)
+        .enter().append("g")
         .attr("transform", d => `translate(${x0(d.level)},0)`);
 
-    levels.selectAll("rect")
+    // Bars
+    levelGroups.selectAll("rect")
         .data(d => [{key: "male", value: d.male}, {key: "female", value: d.female}])
         .enter().append("rect")
         .attr("x", d => x1(d.key))
-        .attr("y", height) // Start at bottom for animation
+        .attr("y", height) // Start at bottom for transition
         .attr("width", x1.bandwidth())
-        .attr("height", 0) // Start height 0
-        .attr("fill", d => color(d.key))
-        .on("mouseover", (event, d) => showTooltip(event, `${d.key}: ${d.value}`))
-        .on("mouseout", hideTooltip)
-        .transition().duration(800)
+        .attr("height", 0)
+        .attr("fill", d => colors[d.key])
+        // Day 5 Objective: Tooltips & Transitions
+        .on("mouseover", function(event, d) {
+            d3.select(this).style("opacity", 0.7);
+            tooltip.style("opacity", 1)
+                   .html(`${d.key.toUpperCase()}: ${d.value.toLocaleString()}`)
+                   .style("left", (event.pageX + 10) + "px")
+                   .style("top", (event.pageY - 20) + "px");
+        })
+        .on("mouseout", function() {
+            d3.select(this).style("opacity", 1);
+            tooltip.style("opacity", 0);
+        })
+        .transition().duration(1000) // Animation
         .attr("y", d => y(d.value))
         .attr("height", d => height - y(d.value));
 }
 
-// --- Chart 2: Donut Chart (Overall Sex Ratio) ---
+// --- CHART 2: Donut Chart ---
 function drawDonutChart(data) {
-    containerDonut.innerHTML = "";
-    const width = containerDonut.clientWidth;
-    const height = 300;
+    const container = document.getElementById('donutChart');
+    container.innerHTML = "";
+    const width = container.clientWidth;
+    const height = 350;
     const radius = Math.min(width, height) / 2 - 20;
 
-    const svg = d3.select(containerDonut).append("svg")
+    const svg = d3.select(container).append("svg")
         .attr("width", width)
         .attr("height", height)
         .append("g")
         .attr("transform", `translate(${width/2},${height/2})`);
 
-    const totalMale = d3.sum(data, d => d.male);
-    const totalFemale = d3.sum(data, d => d.female);
-    const pieData = [{key: "Male", value: totalMale}, {key: "Female", value: totalFemale}];
+    const totalM = d3.sum(data, d => d.male);
+    const totalF = d3.sum(data, d => d.female);
+    const pieData = [
+        {key: "male", value: totalM}, 
+        {key: "female", value: totalF}
+    ];
 
     const pie = d3.pie().value(d => d.value).sort(null);
-    const arc = d3.arc().innerRadius(radius * 0.6).outerRadius(radius);
-    const color = d3.scaleOrdinal().domain(["Male", "Female"]).range(["#006a6a", "#ffb4ab"]);
+    const arc = d3.arc().innerRadius(radius * 0.5).outerRadius(radius);
 
-    svg.selectAll("path")
+    // Day 2: Binding Pie Data
+    const path = svg.selectAll("path")
         .data(pie(pieData))
         .enter().append("path")
-        .attr("d", arc)
-        .attr("fill", d => color(d.data.key))
+        .attr("fill", d => colors[d.data.key])
         .attr("stroke", "white")
-        .style("stroke-width", "2px")
-        .on("mouseover", (event, d) => showTooltip(event, `${d.data.key}: ${d.data.value.toLocaleString()}`))
-        .on("mouseout", hideTooltip)
-        .transition().duration(800).attrTween("d", function(d) {
-            const i = d3.interpolate(d.startAngle+0.1, d.endAngle);
-            return function(t) {
-                d.endAngle = i(t);
-                return arc(d);
-            }
-        });
-        
-    // Center Text
-    svg.append("text").text("Ratio").attr("text-anchor", "middle").style("font-weight", "bold");
+        .attr("stroke-width", "2px")
+        .attr("d", arc)
+        // Day 5: Tooltip
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1)
+                   .html(`${d.data.key.toUpperCase()}: ${d.data.value.toLocaleString()}`)
+                   .style("left", (event.pageX + 10) + "px")
+                   .style("top", (event.pageY - 10) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+
+    // Day 5: Transition (Tweening)
+    path.transition().duration(1000).attrTween("d", function(d) {
+        const i = d3.interpolate(d.startAngle+0.1, d.endAngle);
+        return function(t) {
+            d.endAngle = i(t);
+            return arc(d);
+        }
+    });
+
+    // Center Label
+    svg.append("text")
+       .attr("text-anchor", "middle")
+       .attr("dy", "0.3em")
+       .text("Total Ratio")
+       .style("font-weight", "bold")
+       .style("fill", "#666");
 }
 
-// --- Chart 3: Line Chart (Trends) ---
+// --- CHART 3: Line Chart (Trends) ---
 function drawLineChart() {
-    containerLine.innerHTML = "";
-    const width = containerLine.clientWidth - margin.left - margin.right;
-    const height = 300 - margin.top - margin.bottom;
+    const container = document.getElementById('lineChart');
+    container.innerHTML = "";
+    const width = container.clientWidth - margin.left - margin.right;
+    const height = 350 - margin.top - margin.bottom;
 
-    const svg = d3.select(containerLine).append("svg")
+    const svg = d3.select(container).append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Group data by level for lines
-    const levels = ["Primary", "Secondary"];
-    const nestedData = levels.map(level => {
-        return {
-            level: level,
-            values: educationData.filter(d => d.level === level)
-        };
-    });
+    // Prepare Data: Group by Level
+    const levels = ["Primary", "Secondary", "Tertiary"];
+    const nestedData = levels.map(lvl => ({
+        level: lvl,
+        values: educationData.filter(d => d.level === lvl)
+    }));
 
-    const x = d3.scaleLinear().domain([2021, 2023]).range([0, width]);
-    const y = d3.scaleLinear().domain([10000, 40000]).range([height, 0]); // Adjust domain based on data
-    const color = d3.scaleOrdinal().range(["#006a6a", "#ffb4ab"]);
+    // Scales
+    const uniqueYears = [...new Set(educationData.map(d => d.year))].sort();
+    const x = d3.scalePoint()
+        .domain(uniqueYears)
+        .range([0, width])
+        .padding(0.1); // Add padding so points aren't on edge
 
-    svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(3).tickFormat(d3.format("d")));
+    const y = d3.scaleLinear()
+        .domain([0, 70000])
+        .range([height, 0]);
+
+    const colorScale = d3.scaleOrdinal()
+        .domain(levels)
+        .range(["#006a6a", "#e68a00", "#9c27b0"]); // Distinct colors for lines
+
+    // Axes
+    svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
     svg.append("g").call(d3.axisLeft(y));
 
+    // Line Generator
     const line = d3.line()
         .x(d => x(d.year))
         .y(d => y(d.male + d.female));
 
+    // Draw Lines
     svg.selectAll(".line")
         .data(nestedData)
         .enter().append("path")
         .attr("fill", "none")
-        .attr("stroke", d => color(d.level))
+        .attr("stroke", d => colorScale(d.level))
         .attr("stroke-width", 3)
         .attr("d", d => line(d.values));
-        
+
+    // Add Dots
+    svg.selectAll(".dot-group")
+        .data(nestedData)
+        .enter().append("g")
+        .selectAll("circle")
+        .data(d => d.values.map(v => ({...v, level: d.level}))) // Pass level down
+        .enter().append("circle")
+        .attr("cx", d => x(d.year))
+        .attr("cy", d => y(d.male + d.female))
+        .attr("r", 5)
+        .attr("fill", d => colorScale(d.level))
+        .on("mouseover", (event, d) => {
+            tooltip.style("opacity", 1)
+                   .html(`${d.level} (${d.year}): ${(d.male+d.female).toLocaleString()}`)
+                   .style("left", (event.pageX + 10) + "px")
+                   .style("top", (event.pageY - 15) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+
     // Legend
-    svg.selectAll(".legend")
-        .data(nestedData).enter().append("text")
-        .attr("x", width - 50)
-        .attr("y", (d, i) => i * 20 + 20)
-        .text(d => d.level)
-        .style("fill", d => color(d.level));
+    const legend = svg.selectAll(".legend")
+        .data(nestedData)
+        .enter().append("g")
+        .attr("transform", (d, i) => `translate(${i * 120}, ${height + 35})`);
+
+    legend.append("rect").attr("width", 10).attr("height", 10).attr("fill", d => colorScale(d.level));
+    legend.append("text").attr("x", 15).attr("y", 10).text(d => d.level).style("font-size", "12px");
 }
 
-// --- Tooltip Utils ---
-function showTooltip(event, text) {
-    tooltip.classed("visible", true)
-        .html(text)
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY - 10) + "px");
-}
-function hideTooltip() {
-    tooltip.classed("visible", false);
-}
-
-// Run
+// Start App
 init();
 
-// Handle Window Resize (Redraw charts)
+// Responsive Resize
 window.addEventListener("resize", () => {
     updateDashboard(document.getElementById("yearSelect").value);
     drawLineChart();

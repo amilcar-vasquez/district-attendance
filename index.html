@@ -3,60 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Belize Education Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <title>Belize Education Dashboard (SIB Data)</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Material Design Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Link to external CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <header class="top-app-bar">
-        <h1>Belize Education Analytics</h1>
+    <header>
+        <div>
+            <h1>Belize Education Analytics</h1>
+            <small style="color: #666;">Source: Statistical Institute of Belize (Abstract 2022)</small>
+        </div>
         <div class="controls">
             <label for="yearSelect">Academic Year:</label>
             <select id="yearSelect">
-                <option value="2021">2021</option>
-                <option value="2022">2022</option>
-                <option value="2023" selected>2023</option>
+                <!-- Day 5 Objective: Interactive Filter -->
+                <option value="2019-2020">2019 - 2020</option>
+                <option value="2020-2021">2020 - 2021 (Covid)</option>
+                <option value="2021-2022" selected>2021 - 2022</option>
             </select>
         </div>
     </header>
 
-    <main class="dashboard-grid">
-        
+    <div class="grid-container">
+        <!-- KPI Cards -->
         <div class="card metric-card">
             <h3>Total Enrollment</h3>
-            <p id="totalEnrollment">0</p>
+            <div class="number" id="totalVal">0</div>
         </div>
         <div class="card metric-card">
-            <h3>Primary Students</h3>
-            <p id="primaryEnrollment">0</p>
+            <h3>Female Students</h3>
+            <div class="number" id="femaleVal" style="color: #ffb4ab;">0</div>
         </div>
         <div class="card metric-card">
-            <h3>Secondary Students</h3>
-            <p id="secondaryEnrollment">0</p>
+            <h3>Male Students</h3>
+            <div class="number" id="maleVal">0</div>
+        </div>
+        <div class="card metric-card">
+            <h3>Female Ratio</h3>
+            <div class="number" id="femaleRatio" style="color: #ffb4ab;">0%</div>
+        </div>
+        <div class="card metric-card insight-card">
+            <h3>Key Insights</h3>
+            <div class="insight-item">
+                <span class="insight-label">YoY Change:</span>
+                <span class="insight-value" id="yoyChange">0%</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Largest Level:</span>
+                <span class="insight-value" id="largestLevel">-</span>
+            </div>
+            <div class="insight-item">
+                <span class="insight-label">Gender Gap:</span>
+                <span class="insight-value" id="genderGap">0</span>
+            </div>
         </div>
 
-        <div class="card chart-container large">
-            <h3>Enrollment by Education Level</h3>
+        <!-- Main Bar Chart -->
+        <div class="card large chart-box">
+            <h2>Enrollment by Level & Sex</h2>
             <div id="barChart"></div>
         </div>
 
-        <div class="card chart-container small">
-            <h3>Gender Ratio (Selected Year)</h3>
+        <!-- Donut Chart -->
+        <div class="card chart-box">
+            <h2>Gender Ratio (Selected Year)</h2>
             <div id="donutChart"></div>
         </div>
 
-        <div class="card chart-container full-width">
-            <h3>Enrollment Trends (2021-2023)</h3>
+        <!-- Line Chart -->
+        <div class="card full-width chart-box">
+            <h2>Enrollment Trends (2019 - 2022)</h2>
             <div id="lineChart"></div>
         </div>
+    </div>
 
-    </main>
+    <!-- Tooltip Element -->
+    <div id="tooltip" class="tooltip"></div>
 
-    <div id="tooltip" class="tooltip hidden"></div>
-
+    <!-- link to data -->
     <script src="data.js"></script>
+
+    <!-- Link to external JS -->
     <script src="script.js"></script>
 </body>
 </html>
