@@ -1,30 +1,78 @@
+:root {
+    /* Material 3 Color Palette (Teal & Surface Tones) */
+    --md-sys-color-primary: #006a6a;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-surface: #f4fbfb;
+    --md-sys-color-surface-container: #ffffff;
+    --md-sys-color-on-surface: #161d1d;
+    --md-sys-color-outline: #6f7979;
+    
+    --card-radius: 16px;
+    --shadow-elevation: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 body {
-  margin: 0;
-  background: #fafafa;
-  font-family: Roboto, sans-serif;
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    margin: 0;
+    padding: 0;
 }
-.content {
-  padding: 80px 20px;
+
+/* Header */
+.top-app-bar {
+    background-color: var(--md-sys-color-surface-container);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
 }
-.dashboard {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+
+h1 { margin: 0; font-size: 1.5rem; font-weight: 500; }
+
+/* Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
 }
+
+/* Cards */
 .card {
-  padding: 16px;
-  min-height: 400px;
+    background-color: var(--md-sys-color-surface-container);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-elevation);
+    transition: transform 0.2s;
 }
-svg {
-  width: 100%;
-  height: 350px;
+
+.card:hover { transform: translateY(-2px); }
+
+h3 { margin-top: 0; font-size: 1.1rem; color: var(--md-sys-color-outline); }
+
+/* Specific Card Sizes */
+.metric-card p { font-size: 2.5rem; font-weight: 700; color: var(--md-sys-color-primary); margin: 0.5rem 0 0 0; }
+.full-width { grid-column: 1 / -1; }
+.large { grid-column: span 2; }
+
+@media (max-width: 900px) {
+    .large { grid-column: span 1; }
 }
+
+/* Tooltip */
 .tooltip {
-  position: absolute;
-  background: #fff;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  pointer-events: none;
-  font-size: 14px;
+    position: absolute;
+    background: #333;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
+.tooltip.visible { opacity: 1; }

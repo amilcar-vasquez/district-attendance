@@ -1,32 +1,62 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Belize Attendance Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Material 3 Web -->
-  <link rel="stylesheet" href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css">
-  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Belize Education Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-  <header class="mdc-top-app-bar mdc-top-app-bar--fixed">
-    <div class="mdc-top-app-bar__row">
-      <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-        <span class="mdc-top-app-bar__title">Belize Attendance Dashboard</span>
-      </section>
-    </div>
-  </header>
 
-  <main class="content">
-    <div class="dashboard">
-      <div class="card mdc-card" id="barChart"></div>
-      <div class="card mdc-card" id="lineChart"></div>
-    </div>
-  </main>
+    <header class="top-app-bar">
+        <h1>Belize Education Analytics</h1>
+        <div class="controls">
+            <label for="yearSelect">Academic Year:</label>
+            <select id="yearSelect">
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023" selected>2023</option>
+            </select>
+        </div>
+    </header>
 
-  <script src="script.js"></script>
+    <main class="dashboard-grid">
+        
+        <div class="card metric-card">
+            <h3>Total Enrollment</h3>
+            <p id="totalEnrollment">0</p>
+        </div>
+        <div class="card metric-card">
+            <h3>Primary Students</h3>
+            <p id="primaryEnrollment">0</p>
+        </div>
+        <div class="card metric-card">
+            <h3>Secondary Students</h3>
+            <p id="secondaryEnrollment">0</p>
+        </div>
+
+        <div class="card chart-container large">
+            <h3>Enrollment by Education Level</h3>
+            <div id="barChart"></div>
+        </div>
+
+        <div class="card chart-container small">
+            <h3>Gender Ratio (Selected Year)</h3>
+            <div id="donutChart"></div>
+        </div>
+
+        <div class="card chart-container full-width">
+            <h3>Enrollment Trends (2021-2023)</h3>
+            <div id="lineChart"></div>
+        </div>
+
+    </main>
+
+    <div id="tooltip" class="tooltip hidden"></div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
