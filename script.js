@@ -1,24 +1,28 @@
 // Global Config
+// Margins and shared constants used across chart renderers
 const margin = { top: 30, right: 30, bottom: 50, left: 60 };
 const colors = { male: "#006a6a", female: "#ffb4ab" };
-const tooltip = d3.select("#tooltip");
+const tooltip = d3.select("#tooltip")
 
 // --- Init Function ---
 function init() {
-    // Event Listener for Interaction (Day 5)
+    // Wire the year selector to re-render the dashboard when selection
+    // changes. The selector values match `educationData[].year` entries.
     d3.select("#yearSelect").on("change", function() {
         updateDashboard(this.value);
     });
 
-    // Initial Render
+    // Initial rendering: trends (line chart) use the whole dataset; the
+    // dashboard view defaults to a reasonable recent year.
     drawLineChart(); // Static trend chart
     updateDashboard("2021-2022"); // Default view
 }
 
 function updateDashboard(selectedYear) {
+    // Filter dataset for the requested year and compute several KPIs
     const yearData = educationData.filter(d => d.year === selectedYear);
-    
-    // Update KPIs
+
+    // --- KPIs: totals and breakdowns ---
     const total = d3.sum(yearData, d => d.male + d.female);
     const totalFem = d3.sum(yearData, d => d.female);
     const totalMale = d3.sum(yearData, d => d.male);
@@ -27,11 +31,12 @@ function updateDashboard(selectedYear) {
     d3.select("#femaleVal").text(totalFem.toLocaleString());
     d3.select("#maleVal").text(totalMale.toLocaleString());
 
-    // Female Ratio
+    // Female Ratio (displayed as a percentage)
     const femaleRatio = ((totalFem / total) * 100).toFixed(1);
     d3.select("#femaleRatio").text(`${femaleRatio}%`);
 
-    // Year-over-Year Change
+    // Year-over-year (YoY) change compared to the previous year in the
+    // `years` array. If there's no previous year we show N/A.
     const years = ["2019-2020", "2020-2021", "2021-2022"];
     const currentIndex = years.indexOf(selectedYear);
     if (currentIndex > 0) {
@@ -46,15 +51,12 @@ function updateDashboard(selectedYear) {
         d3.select("#yoyChange").text("N/A").style("color", "#666");
     }
 
-    // Largest Level
-    const levelTotals = yearData.map(d => ({
-        level: d.level,
-        total: d.male + d.female
-    }));
+    // Which education level has the largest enrollment this year?
+    const levelTotals = yearData.map(d => ({ level: d.level, total: d.male + d.female }));
     const largest = levelTotals.reduce((max, curr) => curr.total > max.total ? curr : max);
     d3.select("#largestLevel").text(largest.level);
 
-    // Gender Gap (absolute difference)
+    // Gender gap shown as absolute difference with colored label
     const genderGap = Math.abs(totalFem - totalMale);
     const genderGapElement = d3.select("#genderGap");
     if (totalFem > totalMale) {
@@ -63,12 +65,14 @@ function updateDashboard(selectedYear) {
         genderGapElement.text(`+${genderGap.toLocaleString()} M`).style("color", "#006a6a");
     }
 
+    // Draw the charts using the filtered year data
     drawBarChart(yearData);
     drawDonutChart(yearData);
 }
 
 // --- CHART 1: Grouped Bar Chart ---
 function drawBarChart(data) {
+    // Renders a grouped bar chart for a single year's `data`.
     const container = document.getElementById('barChart');
     container.innerHTML = ""; // Clear for redraw
     const width = container.clientWidth - margin.left - margin.right;
@@ -80,7 +84,7 @@ function drawBarChart(data) {
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Day 3 Objective: Scales (Band & Linear)
+    // X scales: level groups and inner band for male/female
     const x0 = d3.scaleBand()
         .domain(data.map(d => d.level))
         .range([0, width])
@@ -91,6 +95,7 @@ function drawBarChart(data) {
         .range([0, x0.bandwidth()])
         .padding(0.05);
 
+    // Y scale based on the max of male/female values in the data
     const y = d3.scaleLinear()
         .domain([0, d3.max(data, d => Math.max(d.male, d.female)) * 1.1])
         .range([height, 0]);
@@ -99,13 +104,13 @@ function drawBarChart(data) {
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x0));
     svg.append("g").call(d3.axisLeft(y));
 
-    // Day 2 Objective: Binding Data
+    // Group per level
     const levelGroups = svg.selectAll(".level-group")
         .data(data)
         .enter().append("g")
         .attr("transform", d => `translate(${x0(d.level)},0)`);
 
-    // Bars
+    // Bars: two bars per level (male and female)
     levelGroups.selectAll("rect")
         .data(d => [{key: "male", value: d.male}, {key: "female", value: d.female}])
         .enter().append("rect")
@@ -114,7 +119,7 @@ function drawBarChart(data) {
         .attr("width", x1.bandwidth())
         .attr("height", 0)
         .attr("fill", d => colors[d.key])
-        // Day 5 Objective: Tooltips & Transitions
+        // Tooltip shows a simple label + value
         .on("mouseover", function(event, d) {
             d3.select(this).style("opacity", 0.7);
             tooltip.style("opacity", 1)
@@ -126,13 +131,16 @@ function drawBarChart(data) {
             d3.select(this).style("opacity", 1);
             tooltip.style("opacity", 0);
         })
-        .transition().duration(1000) // Animation
+        .transition().duration(1000) // Animate height from 0 to value
         .attr("y", d => y(d.value))
         .attr("height", d => height - y(d.value));
 }
 
 // --- CHART 2: Donut Chart ---
 function drawDonutChart(data) {
+    // Donut chart: sums male/female across provided rows and displays a
+    // donut. This is intentionally compact and intended for a single-year
+    // breakdown.
     const container = document.getElementById('donutChart');
     container.innerHTML = "";
     const width = container.clientWidth;
@@ -147,15 +155,12 @@ function drawDonutChart(data) {
 
     const totalM = d3.sum(data, d => d.male);
     const totalF = d3.sum(data, d => d.female);
-    const pieData = [
-        {key: "male", value: totalM}, 
-        {key: "female", value: totalF}
-    ];
+    const pieData = [ {key: "male", value: totalM}, {key: "female", value: totalF} ];
 
     const pie = d3.pie().value(d => d.value).sort(null);
     const arc = d3.arc().innerRadius(radius * 0.5).outerRadius(radius);
 
-    // Day 2: Binding Pie Data
+    // Bind and draw arcs
     const path = svg.selectAll("path")
         .data(pie(pieData))
         .enter().append("path")
@@ -163,7 +168,6 @@ function drawDonutChart(data) {
         .attr("stroke", "white")
         .attr("stroke-width", "2px")
         .attr("d", arc)
-        // Day 5: Tooltip
         .on("mouseover", (event, d) => {
             tooltip.style("opacity", 1)
                    .html(`${d.data.key.toUpperCase()}: ${d.data.value.toLocaleString()}`)
@@ -172,16 +176,13 @@ function drawDonutChart(data) {
         })
         .on("mouseout", () => tooltip.style("opacity", 0));
 
-    // Day 5: Transition (Tweening)
+    // Animate the arc drawing
     path.transition().duration(1000).attrTween("d", function(d) {
         const i = d3.interpolate(d.startAngle+0.1, d.endAngle);
-        return function(t) {
-            d.endAngle = i(t);
-            return arc(d);
-        }
+        return function(t) { d.endAngle = i(t); return arc(d); };
     });
 
-    // Center Label
+    // Center label
     svg.append("text")
        .attr("text-anchor", "middle")
        .attr("dy", "0.3em")
@@ -192,6 +193,8 @@ function drawDonutChart(data) {
 
 // --- CHART 3: Line Chart (Trends) ---
 function drawLineChart() {
+    // Multi-year line chart: group the global `educationData` by level and
+    // plot total enrollment per year for each level.
     const container = document.getElementById('lineChart');
     container.innerHTML = "";
     const width = container.clientWidth - margin.left - margin.right;
@@ -202,52 +205,34 @@ function drawLineChart() {
         .attr("height", height + margin.top + margin.bottom)
         .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Prepare Data: Group by Level
+    // Group rows by level
     const levels = ["Primary", "Secondary", "Tertiary"];
-    const nestedData = levels.map(lvl => ({
-        level: lvl,
-        values: educationData.filter(d => d.level === lvl)
-    }));
+    const nestedData = levels.map(lvl => ({ level: lvl, values: educationData.filter(d => d.level === lvl) }));
 
-    // Scales
+    // X axis: distinct years
     const uniqueYears = [...new Set(educationData.map(d => d.year))].sort();
-    const x = d3.scalePoint()
-        .domain(uniqueYears)
-        .range([0, width])
-        .padding(0.1); // Add padding so points aren't on edge
+    const x = d3.scalePoint().domain(uniqueYears).range([0, width]).padding(0.1);
 
-    const y = d3.scaleLinear()
-        .domain([0, 70000])
-        .range([height, 0]);
+    // Y axis: fixed domain for simplicity (tune to your data)
+    const y = d3.scaleLinear().domain([0, 70000]).range([height, 0]);
 
-    const colorScale = d3.scaleOrdinal()
-        .domain(levels)
-        .range(["#006a6a", "#e68a00", "#9c27b0"]); // Distinct colors for lines
+    const colorScale = d3.scaleOrdinal().domain(levels).range(["#006a6a", "#e68a00", "#9c27b0"]);
 
-    // Axes
     svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
     svg.append("g").call(d3.axisLeft(y));
 
-    // Line Generator
-    const line = d3.line()
-        .x(d => x(d.year))
-        .y(d => y(d.male + d.female));
+    const line = d3.line().x(d => x(d.year)).y(d => y(d.male + d.female));
 
-    // Draw Lines
-    svg.selectAll(".line")
-        .data(nestedData)
-        .enter().append("path")
+    svg.selectAll(".line").data(nestedData).enter().append("path")
         .attr("fill", "none")
         .attr("stroke", d => colorScale(d.level))
         .attr("stroke-width", 3)
         .attr("d", d => line(d.values));
 
-    // Add Dots
-    svg.selectAll(".dot-group")
-        .data(nestedData)
-        .enter().append("g")
+    // Dots for individual points with tooltip
+    svg.selectAll(".dot-group").data(nestedData).enter().append("g")
         .selectAll("circle")
-        .data(d => d.values.map(v => ({...v, level: d.level}))) // Pass level down
+        .data(d => d.values.map(v => ({...v, level: d.level})))
         .enter().append("circle")
         .attr("cx", d => x(d.year))
         .attr("cy", d => y(d.male + d.female))
@@ -261,10 +246,7 @@ function drawLineChart() {
         })
         .on("mouseout", () => tooltip.style("opacity", 0));
 
-    // Legend
-    const legend = svg.selectAll(".legend")
-        .data(nestedData)
-        .enter().append("g")
+    const legend = svg.selectAll(".legend").data(nestedData).enter().append("g")
         .attr("transform", (d, i) => `translate(${i * 120}, ${height + 35})`);
 
     legend.append("rect").attr("width", 10).attr("height", 10).attr("fill", d => colorScale(d.level));
@@ -274,9 +256,13 @@ function drawLineChart() {
 // Start App
 init();
 
-// Responsive Resize
 // Export: convert SVG inside a chart container to PNG and trigger download
 function exportSVGToPNG(containerId, filename = 'chart.png') {
+    // Utility: serialize the first <svg> found inside `containerId`, create
+    // an Image from that serialized SVG, draw it onto a canvas, optionally
+    // render the chart title above the image, and then trigger a download.
+    // Note: this works with the SVG elements produced by the chart functions
+    // above. If an SVG isn't present (e.g. chart hasn't rendered), we alert.
     const container = document.getElementById(containerId);
     if (!container) {
         console.error('Container not found:', containerId);
@@ -339,6 +325,7 @@ function exportSVGToPNG(containerId, filename = 'chart.png') {
 
         // Draw title if available
         if (titleText) {
+            // Draw the title using a readable font size relative to width.
             ctx.fillStyle = '#222';
             const fontSize = Math.max(12, Math.round(width * 0.04));
             ctx.font = `bold ${fontSize}px Roboto, sans-serif`;
@@ -378,6 +365,8 @@ function exportSVGToPNG(containerId, filename = 'chart.png') {
 
 // Delegated handler for export buttons
 document.addEventListener('click', (event) => {
+    // Export buttons are placed in the card header and have
+    // `data-target` attributes pointing at chart container ids.
     const btn = event.target.closest && event.target.closest('.export-chart');
     if (!btn) return;
     const target = btn.getAttribute('data-target');

@@ -1,3 +1,4 @@
+//data.js
 // Source: SIB Abstract of Statistics 2022, Table 3.78
 const educationData = [
     { year: "2019-2020", level: "Preschool", male: 3689, female: 3623 },
