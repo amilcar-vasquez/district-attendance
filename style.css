@@ -101,6 +101,23 @@ h2 { font-size: 1.1rem; margin-top: 0; margin-bottom: 1rem; color: #444; }
     z-index: 10;
 }
 
+/* Card header with export button */
+.card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.card-header h2 { margin: 0; font-size: 1.05rem; }
+
+.export-chart {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: background 0.15s, transform 0.08s;
+}
+.export-chart:hover { background: rgba(0,0,0,0.06); transform: translateY(-1px); }
+.export-chart:active { transform: translateY(0); }
+.export-chart:focus { outline: 2px solid rgba(0,106,106,0.2); }
+
 /* Axis styling */
 .domain { stroke: #ccc; }
 .tick line { stroke: #eee; }

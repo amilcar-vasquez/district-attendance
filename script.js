@@ -275,6 +275,117 @@ function drawLineChart() {
 init();
 
 // Responsive Resize
+// Export: convert SVG inside a chart container to PNG and trigger download
+function exportSVGToPNG(containerId, filename = 'chart.png') {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error('Container not found:', containerId);
+        return;
+    }
+    const svg = container.querySelector('svg');
+    if (!svg) {
+        alert('No SVG found inside container. Please let the chart render first.');
+        return;
+    }
+
+    // Compute width/height
+    let width = parseInt(svg.getAttribute('width')) || 0;
+    let height = parseInt(svg.getAttribute('height')) || 0;
+    try {
+        const bbox = svg.getBBox();
+        if (!width) width = Math.ceil(bbox.width || svg.getBoundingClientRect().width);
+        if (!height) height = Math.ceil(bbox.height || svg.getBoundingClientRect().height);
+    } catch (e) {
+        // getBBox can fail in some cases; fall back to bounding rect
+        const rect = svg.getBoundingClientRect();
+        if (!width) width = Math.ceil(rect.width);
+        if (!height) height = Math.ceil(rect.height);
+    }
+
+    if (!width || !height) {
+        // Reasonable defaults
+        width = 800; height = 600;
+    }
+
+    // Try to read an optional chart title from the card header
+    const headerEl = container.parentElement ? container.parentElement.querySelector('.card-header h2') : null;
+    const titleText = headerEl ? headerEl.textContent.trim() : '';
+
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', width);
+    clone.setAttribute('height', height);
+
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(clone);
+
+    if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www.w3.org\/2000\/svg"/)) {
+        svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+
+    const img = new Image();
+    img.onload = () => {
+        // Reserve some top padding for the title if present
+        const titlePadding = titleText ? Math.max(32, Math.round(width * 0.05)) : 0;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height + titlePadding;
+        const ctx = canvas.getContext('2d');
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw title if available
+        if (titleText) {
+            ctx.fillStyle = '#222';
+            const fontSize = Math.max(12, Math.round(width * 0.04));
+            ctx.font = `bold ${fontSize}px Roboto, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Position title vertically centered in the padding
+            ctx.fillText(titleText, canvas.width / 2, titlePadding / 2 + 2);
+        }
+
+        // Draw the chart image below the title area
+        ctx.drawImage(img, 0, titlePadding, width, height);
+
+        const png = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = png;
+
+        // Construct a filename incorporating the sanitized title if present
+        if (titleText) {
+            const safe = titleText.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+            a.download = `${safe || containerId}.png`;
+        } else {
+            a.download = filename || `${containerId}.png`;
+        }
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    };
+
+    img.onerror = (err) => {
+        console.error('Failed to create image from SVG', err);
+        alert('Export failed — check console for details.');
+    };
+
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+}
+
+// Delegated handler for export buttons
+document.addEventListener('click', (event) => {
+    const btn = event.target.closest && event.target.closest('.export-chart');
+    if (!btn) return;
+    const target = btn.getAttribute('data-target');
+    if (!target) return;
+    const filename = `${target}.png`;
+    exportSVGToPNG(target, filename);
+});
+
 window.addEventListener("resize", () => {
     updateDashboard(document.getElementById("yearSelect").value);
     drawLineChart();

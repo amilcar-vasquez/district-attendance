@@ -64,19 +64,28 @@
 
         <!-- Main Bar Chart -->
         <div class="card large chart-box">
-            <h2>Enrollment by Level & Sex</h2>
+            <div class="card-header">
+                <h2>Enrollment by Level & Sex</h2>
+                <button class="export-chart" data-target="barChart" title="Export PNG" aria-label="Export bar chart">📷</button>
+            </div>
             <div id="barChart"></div>
         </div>
 
         <!-- Donut Chart -->
         <div class="card chart-box">
-            <h2>Gender Ratio (Selected Year)</h2>
+            <div class="card-header">
+                <h2>Gender Ratio (Selected Year)</h2>
+                <button class="export-chart" data-target="donutChart" title="Export PNG" aria-label="Export donut chart">📷</button>
+            </div>
             <div id="donutChart"></div>
         </div>
 
         <!-- Line Chart -->
         <div class="card full-width chart-box">
-            <h2>Enrollment Trends (2019 - 2022)</h2>
+            <div class="card-header">
+                <h2>Enrollment Trends (2019 - 2022)</h2>
+                <button class="export-chart" data-target="lineChart" title="Export PNG" aria-label="Export line chart">📷</button>
+            </div>
             <div id="lineChart"></div>
         </div>
     </div>
